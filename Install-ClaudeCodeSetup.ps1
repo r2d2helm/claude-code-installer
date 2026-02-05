@@ -43,6 +43,16 @@ function Write-Warning { param([string]$Message) Write-Host "  [!] $Message" -Fo
 function Write-Error { param([string]$Message) Write-Host "  [X] $Message" -ForegroundColor Red }
 $script:Step = 1
 
+# Fonction pour écrire en UTF-8 avec BOM (compatible PS 5.1)
+function Write-Utf8WithBom {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Content
+    )
+    $utf8Bom = New-Object System.Text.UTF8Encoding $true
+    [System.IO.File]::WriteAllText($Path, $Content, $utf8Bom)
+}
+
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
@@ -526,7 +536,7 @@ Agent de surveillance multi-sources pour capturer automatiquement les connaissan
     @{ notes = @(); terms = @{} } | ConvertTo-Json | Out-File -FilePath "$skillPath\data\notes-index.json" -Encoding UTF8
 
     # Module PowerShell principal
-    @'
+    $moduleContent = @'
 # KnowledgeWatcher.psm1
 # Module principal pour la surveillance de connaissances
 
@@ -602,10 +612,11 @@ function Add-ToQueue {
 }
 
 Export-ModuleMember -Function Get-KWConfig, Write-KWLog, Add-ToQueue
-'@ | Out-File -FilePath "$skillPath\scripts\KnowledgeWatcher.psm1" -Encoding UTF8BOM
+'@
+    Write-Utf8WithBom -Path "$skillPath\scripts\KnowledgeWatcher.psm1" -Content $moduleContent
 
     # Start-KnowledgeWatcher.ps1
-    @'
+    $startWatcherContent = @'
 # Start-KnowledgeWatcher.ps1
 # Démarre les watchers temps réel (Tier 1)
 
@@ -682,10 +693,11 @@ try {
     foreach ($w in $watchers) { $w.Dispose() }
     Write-KWLog "Watchers arrêtés"
 }
-'@ | Out-File -FilePath "$skillPath\scripts\Start-KnowledgeWatcher.ps1" -Encoding UTF8BOM
+'@
+    Write-Utf8WithBom -Path "$skillPath\scripts\Start-KnowledgeWatcher.ps1" -Content $startWatcherContent
 
     # Stop-KnowledgeWatcher.ps1
-    @'
+    $stopWatcherContent = @'
 # Stop-KnowledgeWatcher.ps1
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Import-Module (Join-Path $scriptDir "KnowledgeWatcher.psm1") -Force
@@ -708,7 +720,8 @@ if (Test-Path $statePath) {
 # Reset state
 @{ watchers = @{}; lastProcessed = $null } | ConvertTo-Json | Out-File -FilePath $statePath -Encoding UTF8
 Write-Host "Knowledge Watcher arrêté" -ForegroundColor Green
-'@ | Out-File -FilePath "$skillPath\scripts\Stop-KnowledgeWatcher.ps1" -Encoding UTF8BOM
+'@
+    Write-Utf8WithBom -Path "$skillPath\scripts\Stop-KnowledgeWatcher.ps1" -Content $stopWatcherContent
 
     # Commandes
     @"
@@ -1063,34 +1076,37 @@ function Register-ScheduledTasks {
     }
 
     # Tier 2 - Hourly
-    @'
+    $tier2Content = @'
 # KnowledgeWatcher-Tier2-Hourly.ps1
 $skillPath = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Import-Module (Join-Path $skillPath "scripts\KnowledgeWatcher.psm1") -Force
 Write-KWLog "Tier 2 (Hourly) - Démarrage"
 # TODO: Implémenter traitement Downloads, Formations
 Write-KWLog "Tier 2 (Hourly) - Terminé"
-'@ | Out-File -FilePath "$scriptsPath\KnowledgeWatcher-Tier2-Hourly.ps1" -Encoding UTF8BOM
+'@
+    Write-Utf8WithBom -Path "$scriptsPath\KnowledgeWatcher-Tier2-Hourly.ps1" -Content $tier2Content
 
     # Tier 3 - Daily
-    @'
+    $tier3Content = @'
 # KnowledgeWatcher-Tier3-Daily.ps1
 $skillPath = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Import-Module (Join-Path $skillPath "scripts\KnowledgeWatcher.psm1") -Force
 Write-KWLog "Tier 3 (Daily) - Démarrage"
 # TODO: Implémenter traitement Bookmarks, Scripts
 Write-KWLog "Tier 3 (Daily) - Terminé"
-'@ | Out-File -FilePath "$scriptsPath\KnowledgeWatcher-Tier3-Daily.ps1" -Encoding UTF8BOM
+'@
+    Write-Utf8WithBom -Path "$scriptsPath\KnowledgeWatcher-Tier3-Daily.ps1" -Content $tier3Content
 
     # Tier 4 - Weekly
-    @'
+    $tier4Content = @'
 # KnowledgeWatcher-Tier4-Weekly.ps1
 $skillPath = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Import-Module (Join-Path $skillPath "scripts\KnowledgeWatcher.psm1") -Force
 Write-KWLog "Tier 4 (Weekly) - Démarrage"
 # TODO: Implémenter traitement Archives
 Write-KWLog "Tier 4 (Weekly) - Terminé"
-'@ | Out-File -FilePath "$scriptsPath\KnowledgeWatcher-Tier4-Weekly.ps1" -Encoding UTF8BOM
+'@
+    Write-Utf8WithBom -Path "$scriptsPath\KnowledgeWatcher-Tier4-Weekly.ps1" -Content $tier4Content
 
     # Enregistrer les tâches (nécessite élévation)
     $tasks = @(
