@@ -27,9 +27,11 @@
 
 [CmdletBinding()]
 param(
-    [string]$VaultPath = "$env:USERPROFILE\Documents\Knowledge",
+    [string]$VaultPath,
+    [string]$BasePath,
     [switch]$SkipScheduledTasks,
-    [switch]$SkipMCP
+    [switch]$SkipMCP,
+    [switch]$TestMode
 )
 
 $ErrorActionPreference = "Stop"
@@ -57,15 +59,21 @@ function Write-Utf8WithBom {
 # CONFIGURATION
 # ============================================================================
 
+# Déterminer le chemin de base
+if (-not $BasePath) { $BasePath = $env:USERPROFILE }
+if (-not $VaultPath) { $VaultPath = "$BasePath\Documents\Knowledge" }
+
 $Config = @{
-    ClaudeDir       = "$env:USERPROFILE\.claude"
-    SkillsDir       = "$env:USERPROFILE\.claude\skills"
-    MCPDir          = "$env:USERPROFILE\.claude\mcp-servers"
-    LocalBin        = "$env:USERPROFILE\.local\bin"
+    BasePath        = $BasePath
+    ClaudeDir       = "$BasePath\.claude"
+    SkillsDir       = "$BasePath\.claude\skills"
+    MCPDir          = "$BasePath\.claude\mcp-servers"
+    LocalBin        = "$BasePath\.local\bin"
     VaultPath       = $VaultPath
-    ProjetsPath     = "$env:USERPROFILE\Documents\Projets"
+    ProjetsPath     = "$BasePath\Documents\Projets"
     GitHubUser      = "r2d2helm"
     MCPRepoUrl      = "https://github.com/r2d2helm/knowledge-assistant-mcp.git"
+    TestMode        = $TestMode
 }
 
 # ============================================================================
@@ -74,6 +82,12 @@ $Config = @{
 
 function Test-Prerequisites {
     Write-Step "Vérification des prérequis"
+
+    if ($Config.TestMode) {
+        Write-Success "Mode test activé - vérifications simplifiées"
+        Write-Success "BasePath: $($Config.BasePath)"
+        return
+    }
 
     # Windows version
     $os = Get-CimInstance Win32_OperatingSystem
@@ -162,6 +176,11 @@ function Initialize-DirectoryStructure {
 }
 
 function Install-UvPackageManager {
+    if ($Config.TestMode) {
+        Write-Step "Installation de uv: ignoré (mode test)"
+        return
+    }
+
     if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
         Write-Step "Installation de uv (gestionnaire Python)"
 
