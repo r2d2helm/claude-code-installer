@@ -301,9 +301,10 @@ Agent spécialisé pour l'administration Proxmox VE 9.0, 9.1+.
 }
 
 function Install-KnowledgeSkill {
-    Write-Step "Installation: knowledge-skill"
+    Write-Step "Installation: know-save skill"
 
-    $skillPath = Join-Path $Config.SkillsDir "knowledge-skill"
+    # Format correct: skills/<skill-name>/SKILL.md -> /skill-name
+    $skillPath = Join-Path $Config.SkillsDir "know-save"
 
     if (Test-Path $skillPath) {
         Write-Success "Déjà installé: $skillPath"
@@ -311,81 +312,83 @@ function Install-KnowledgeSkill {
     }
 
     New-Item -ItemType Directory -Path $skillPath -Force | Out-Null
-    New-Item -ItemType Directory -Path "$skillPath\commands" -Force | Out-Null
-    New-Item -ItemType Directory -Path "$skillPath\wizards" -Force | Out-Null
+
+    $vaultPath = $Config.VaultPath
 
     @"
-# Knowledge Skill - Capture de Connaissances
-
-## Description
-Agent pour capturer et organiser les connaissances selon la méthode CODE:
-- **C**apture: Collecter informations
-- **O**rganize: Classer par type
-- **D**istill: Extraire l'essentiel
-- **E**xpress: Réutiliser
-
-## Prérequis
-- Obsidian vault configuré
-- PowerShell 7.4+
-
-## Vault Path
-``$env:USERPROFILE\Documents\Knowledge``
-
-## Commandes
-| Commande | Description |
-|----------|-------------|
-| /know-save | Sauvegarder conversation |
-| /know-search | Rechercher dans vault |
-| /know-export | Exporter vers Obsidian |
-
-## Structure Vault
-``````
-Knowledge/
-├── _Inbox/         # À traiter
-├── Concepts/       # Notes atomiques (C_*)
-├── Conversations/  # Sessions Claude
-├── Projets/        # Notes projet
-└── Références/     # Documentation
-``````
-
-## Tags
-#knowledge #pkm #obsidian #zettelkasten
-"@ | Out-File -FilePath "$skillPath\SKILL.md" -Encoding UTF8
-
-    # Commande save
-    @"
-# /know-save
-
-## Description
-Sauvegarde la conversation actuelle dans Obsidian.
-
-## Utilisation
-``````
-/know-save [titre] [--type conversation|concept|troubleshooting]
-``````
-
-## Processus
-1. Résume la conversation
-2. Extrait les points clés
-3. Génère le frontmatter YAML
-4. Crée la note dans le dossier approprié
-5. Ajoute les liens vers notes existantes
-
-## Frontmatter
-``````yaml
 ---
-title: Titre de la conversation
-date: 2026-02-05
+name: know-save
+description: Sauvegarder et résumer la conversation actuelle dans le vault Knowledge
+allowed-tools: Bash(powershell:*), Write(*), Read(*)
+---
+
+## Context
+
+- Date actuelle: !``powershell -Command "Get-Date -Format 'yyyy-MM-dd'"``
+- Heure actuelle: !``powershell -Command "Get-Date -Format 'HHmmss'"``
+- Vault Knowledge: $vaultPath
+
+## Your task
+
+Analyse la conversation actuelle et sauvegarde-la dans le vault Obsidian.
+
+### Étapes:
+
+1. **Analyser** la conversation pour extraire:
+   - Sujet principal (pour le titre)
+   - Résumé en 2-3 phrases
+   - Points clés (3-5 bullets)
+   - Décisions prises
+   - Code/commandes utilisés
+   - Actions suivantes
+   - Tags pertinents (#domaine/sous-domaine)
+
+2. **Créer le fichier de conversation** dans ``Knowledge/Conversations/``:
+   - Nom: ``{YYYY-MM-DD}_Conv_{Sujet-Sans-Espaces}.md``
+   - Utiliser le template avec frontmatter YAML
+
+3. **Mettre à jour la Daily Note** dans ``Knowledge/_Daily/``:
+   - Créer si n'existe pas
+   - Ajouter lien vers la conversation
+
+### Template de sortie:
+
+``````markdown
+---
+id: {YYYYMMDD}-{HHMMSS}
+title: {Titre}
+date: {YYYY-MM-DD}
 type: conversation
-tags:
-  - dev/powershell
-  - ai/claude
+tags: [{tags}]
+source: Claude
+status: captured
 related: []
 ---
-``````
-"@ | Out-File -FilePath "$skillPath\commands\save.md" -Encoding UTF8
 
-    Write-Success "Installé: knowledge-skill"
+# {Titre}
+
+## Résumé
+{résumé}
+
+## Points Clés
+- {point1}
+- {point2}
+- {point3}
+
+## Code/Commandes
+```{langage}
+{code extrait}
+```
+
+## Actions Suivantes
+- [ ] {action1}
+
+---
+*Capturé le {date} depuis conversation Claude*
+``````
+"@ | Out-File -FilePath "$skillPath\SKILL.md" -Encoding UTF8
+
+    Write-Success "Installé: know-save -> /know-save"
 }
 
 function Install-KnowledgeWatcherSkill {
