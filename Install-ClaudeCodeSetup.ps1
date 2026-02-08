@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     Ce script installe:
-    - 6 Skills: windows-skill, proxmox-skill, knowledge-skill, knowledge-watcher-skill, obsidian-skill, fileorg-skill
+    - 10 Skills: windows-skill, proxmox-skill, docker-skill, linux-skill, knowledge-skill, knowledge-watcher-skill, obsidian-skill, fileorg-skill, vault-guardian-skill, meta-router
     - 1 MCP Server: knowledge-assistant
     - Templates Obsidian
     - Tâches planifiées Knowledge Watcher
@@ -35,8 +35,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$script:InstallerVersion = "1.0.0"
-$script:InstallerDate = "2026-02-05"
+$script:InstallerVersion = "1.1.0"
+$script:InstallerDate = "2026-02-08"
 
 # Couleurs
 function Write-Step { param([string]$Message) Write-Host "`n[$script:Step] $Message" -ForegroundColor Cyan; $script:Step++ }
@@ -869,6 +869,248 @@ Exemples:
     Write-Success "Installé: fileorg-skill"
 }
 
+function Install-DockerSkill {
+    Write-Step "Installation: docker-skill"
+
+    $skillPath = Join-Path $Config.SkillsDir "docker-skill"
+
+    if (Test-Path $skillPath) {
+        Write-Success "Déjà installé: $skillPath"
+        return
+    }
+
+    New-Item -ItemType Directory -Path $skillPath -Force | Out-Null
+    New-Item -ItemType Directory -Path "$skillPath\commands" -Force | Out-Null
+    New-Item -ItemType Directory -Path "$skillPath\wizards" -Force | Out-Null
+
+    @"
+# Docker Skill - Administration Docker et Conteneurs
+
+## Description
+Agent spécialisé pour l'administration Docker Engine et Docker Compose.
+
+## Prérequis
+- Docker Engine 24+
+- Docker Compose v2+
+
+## Commandes
+| Commande | Description |
+|----------|-------------|
+| /dk-ps | Lister les conteneurs |
+| /dk-images | Gestion des images |
+| /dk-logs | Consulter les logs |
+| /dk-exec | Exécuter dans un conteneur |
+| /dk-build | Build d'images |
+| /dk-compose | Docker Compose |
+| /dk-network | Gestion réseaux |
+| /dk-volume | Gestion volumes |
+| /dk-stats | Statistiques ressources |
+| /dk-prune | Nettoyage Docker |
+
+## Wizards
+| Wizard | Description |
+|--------|-------------|
+| /dk-wizard-setup | Installation Docker |
+| /dk-wizard-dockerfile | Créer un Dockerfile |
+| /dk-wizard-compose | Créer un docker-compose.yml |
+
+## Tags
+#docker #containers #devops
+"@ | Out-File -FilePath "$skillPath\SKILL.md" -Encoding UTF8
+
+    Write-Success "Installé: docker-skill (10 cmd, 3 wizards)"
+}
+
+function Install-LinuxSkill {
+    Write-Step "Installation: linux-skill"
+
+    $skillPath = Join-Path $Config.SkillsDir "linux-skill"
+
+    if (Test-Path $skillPath) {
+        Write-Success "Déjà installé: $skillPath"
+        return
+    }
+
+    New-Item -ItemType Directory -Path $skillPath -Force | Out-Null
+    New-Item -ItemType Directory -Path "$skillPath\commands" -Force | Out-Null
+    New-Item -ItemType Directory -Path "$skillPath\wizards" -Force | Out-Null
+
+    @"
+# Linux Skill - Administration Serveurs Linux
+
+## Description
+Agent spécialisé pour l'administration de serveurs Linux (Debian/Ubuntu, RHEL/Rocky).
+
+## Prérequis
+- Accès SSH au serveur
+- Droits sudo
+
+## Commandes
+| Commande | Description |
+|----------|-------------|
+| /lx-status | Vue d'ensemble système |
+| /lx-services | Gestion systemd |
+| /lx-process | Gestion processus |
+| /lx-disk | Espace disque et montages |
+| /lx-network | Configuration réseau |
+| /lx-firewall | Règles iptables/nftables |
+| /lx-users | Gestion utilisateurs |
+| /lx-packages | Gestion paquets (apt/dnf) |
+| /lx-logs | Consultation journalctl |
+| /lx-security | Audit sécurité |
+| /lx-performance | Analyse performances |
+| /lx-cron | Gestion tâches cron |
+
+## Wizards
+| Wizard | Description |
+|--------|-------------|
+| /lx-wizard-setup | Configuration initiale serveur |
+| /lx-wizard-lamp | Installation stack LAMP |
+| /lx-wizard-docker-host | Configurer un hôte Docker |
+
+## Tags
+#linux #admin #ssh #server
+"@ | Out-File -FilePath "$skillPath\SKILL.md" -Encoding UTF8
+
+    Write-Success "Installé: linux-skill (12 cmd, 3 wizards)"
+}
+
+function Install-VaultGuardianSkill {
+    Write-Step "Installation: vault-guardian-skill"
+
+    $skillPath = Join-Path $Config.SkillsDir "vault-guardian-skill"
+
+    if (Test-Path $skillPath) {
+        Write-Success "Déjà installé: $skillPath"
+        return
+    }
+
+    New-Item -ItemType Directory -Path $skillPath -Force | Out-Null
+    New-Item -ItemType Directory -Path "$skillPath\commands" -Force | Out-Null
+    New-Item -ItemType Directory -Path "$skillPath\scripts" -Force | Out-Null
+    New-Item -ItemType Directory -Path "$skillPath\data" -Force | Out-Null
+
+    @"
+# Vault Guardian Skill - Maintenance Proactive Automatisée
+
+## Description
+Agent de maintenance proactive pour le vault Obsidian. Détecte et corrige automatiquement les problèmes de santé du vault.
+
+## Vault Path
+``$env:USERPROFILE\Documents\Knowledge``
+
+## Commandes
+| Commande | Description |
+|----------|-------------|
+| /guardian-health | Diagnostic complet du vault (quick/full) |
+| /guardian-fix | Corrections automatiques (frontmatter, liens, tags) |
+| /guardian-report | Rapport d'audit mensuel détaillé |
+
+## Maintenance recommandée
+- **Quotidien** : ``/guardian-health --quick``
+- **Hebdomadaire** : ``/guardian-fix``
+- **Mensuel** : ``/guardian-report``
+
+## Tags
+#obsidian #maintenance #automation #vault
+"@ | Out-File -FilePath "$skillPath\SKILL.md" -Encoding UTF8
+
+    Write-Success "Installé: vault-guardian-skill (3 cmd)"
+}
+
+function Install-MetaRouter {
+    Write-Step "Installation: meta-router (SKILL.md + commandes globales)"
+
+    $skillsDir = $Config.SkillsDir
+    $commandsDir = Join-Path $skillsDir "commands"
+
+    # SKILL.md (routeur principal)
+    $skillMdPath = Join-Path $skillsDir "SKILL.md"
+    if (-not (Test-Path $skillMdPath)) {
+        @"
+# Meta-Agent Router
+
+## Description
+Point d'entrée intelligent qui analyse chaque requête et route vers le skill approprié.
+
+## Détection par mots-clés
+| Mots-clés | Skill activé |
+|-----------|-------------|
+| windows, win-, service, registre, AD | windows-skill |
+| proxmox, pve, vm, container, ceph | proxmox-skill |
+| docker, conteneur, compose, image | docker-skill |
+| linux, ssh, systemd, apt, firewall | linux-skill |
+| know-, connaissance, sauvegarder | knowledge-skill |
+| kwatch-, watcher, surveillance | knowledge-watcher-skill |
+| obs-, obsidian, vault, liens, tags | obsidian-skill |
+| file-, organiser, renommer, doublons | fileorg-skill |
+| guardian-, maintenance, santé vault | vault-guardian-skill |
+
+## Commandes globales
+| Commande | Description |
+|----------|-------------|
+| /router | Afficher le routage actif |
+| /agents | Lister tous les agents disponibles |
+| /context | Afficher le contexte système |
+| /infra | Vue d'ensemble infrastructure |
+
+## Skills disponibles: 10
+## Commandes totales: 112
+## Wizards totaux: 29
+"@ | Out-File -FilePath $skillMdPath -Encoding UTF8
+        Write-Success "Créé: SKILL.md (Meta-Agent Router)"
+    } else {
+        Write-Success "Existe: SKILL.md"
+    }
+
+    # Commandes globales
+    if (-not (Test-Path $commandsDir)) {
+        New-Item -ItemType Directory -Path $commandsDir -Force | Out-Null
+    }
+
+    @"
+# /router
+
+## Description
+Affiche l'état du routeur et les skills disponibles.
+
+## Action
+Liste tous les skills actifs avec leur préfixe et nombre de commandes.
+"@ | Out-File -FilePath "$commandsDir\router.md" -Encoding UTF8
+
+    @"
+# /agents
+
+## Description
+Liste tous les agents (skills) disponibles avec leurs capacités.
+
+## Action
+Affiche un tableau détaillé de chaque skill: nom, préfixe, commandes, wizards, description.
+"@ | Out-File -FilePath "$commandsDir\agents.md" -Encoding UTF8
+
+    @"
+# /context
+
+## Description
+Affiche le contexte système actuel.
+
+## Action
+Informations sur: OS, PowerShell, Python, vault Obsidian, MCP servers, skills chargés.
+"@ | Out-File -FilePath "$commandsDir\context.md" -Encoding UTF8
+
+    @"
+# /infra
+
+## Description
+Vue d'ensemble de l'infrastructure gérée.
+
+## Action
+Résumé des machines, services et ressources supervisés par les skills.
+"@ | Out-File -FilePath "$commandsDir\infra.md" -Encoding UTF8
+
+    Write-Success "Installé: meta-router (4 commandes globales)"
+}
+
 # ============================================================================
 # INSTALLATION MCP SERVER
 # ============================================================================
@@ -1196,15 +1438,19 @@ function Create-MemoryFile {
 - **Skills**: ``$($Config.SkillsDir)``
 - **Projects**: ``$($Config.ProjetsPath)``
 
-## Installed Skills
+## Installed Skills (10)
 | Skill | Purpose | Commands |
 |-------|---------|----------|
-| windows-skill | Windows diagnostics | /win-* |
-| fileorg-skill | File organization | /fileorg-* |
-| obsidian-skill | Obsidian vault management | /obs-* |
-| knowledge-skill | Save conversations to Obsidian | /know-* |
-| knowledge-watcher-skill | Auto-capture data to Obsidian | /kwatch-* |
-| proxmox-skill | Proxmox VM management | /proxmox-* |
+| windows-skill | Windows administration | /win-* (36 cmd, 10 wizards) |
+| proxmox-skill | Proxmox VE management | /px-* (21 cmd, 11 wizards) |
+| docker-skill | Docker administration | /dk-* (10 cmd, 3 wizards) |
+| linux-skill | Linux server administration | /lx-* (12 cmd, 3 wizards) |
+| knowledge-skill | Save conversations to Obsidian | /know-* (3 cmd) |
+| knowledge-watcher-skill | Auto-capture data to Obsidian | /kwatch-* (6 cmd, 2 wizards) |
+| obsidian-skill | Obsidian vault management | /obs-* (8 cmd) |
+| fileorg-skill | File organization | /file-* (9 cmd) |
+| vault-guardian-skill | Proactive vault maintenance | /guardian-* (3 cmd) |
+| meta-router | Intelligent routing | /router, /agents, /context, /infra |
 
 ## Knowledge Watcher
 - **Status**: Installed
@@ -1270,10 +1516,14 @@ function Main {
     # Skills
     Install-WindowsSkill
     Install-ProxmoxSkill
+    Install-DockerSkill
+    Install-LinuxSkill
     Install-KnowledgeSkill
     Install-KnowledgeWatcherSkill
     Install-ObsidianSkill
     Install-FileorgSkill
+    Install-VaultGuardianSkill
+    Install-MetaRouter
 
     # MCP
     Install-MCPServer
